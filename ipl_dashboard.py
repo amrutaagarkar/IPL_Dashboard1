@@ -1,82 +1,50 @@
-import sys
-import os
 import pandas as pd
 import plotly.express as px
-import streamlit as st
+import ipywidgets as widgets
+from IPython.display import display
 
-# ---------------------------
-# App Configuration
-# ---------------------------
-st.set_page_config(page_title="🏏 IPL Dashboard", layout="wide", page_icon="🏏")
-st.title("🏏 IPL Data Analysis Dashboard")
-
-# ---------------------------
 # Load Data
-# ---------------------------
-def load_data(path="matches.csv"):
-    """Load IPL match data or show an error if missing."""
-    if not os.path.exists(path):
-        st.error("⚠️ File 'matches.csv' not found. Please upload it to this folder.")
-        st.stop()
-    return pd.read_csv(path)
+matches_url = "https://drive.google.com/uc?export=download&id=1ZCqwqbFRHdwHTCO4LWQezWB99LfynPJB"
+deliveries_url = "https://drive.google.com/uc?export=download&id=1kQXChtwZxkYrbzvVY5k4s-ffs6dVCVXK"
 
-matches = load_data()
+matches = pd.read_csv(matches_url)
+deliveries = pd.read_csv(deliveries_url)
 
-# ---------------------------
-# Dashboard Sections
-# ---------------------------
-
-# 🥇 Top Winning Teams
-st.subheader("🥇 Top Winning Teams")
-team_wins = matches['winner'].dropna().value_counts().reset_index()
-team_wins.columns = ['Team', 'Wins']
-fig1 = px.bar(
-    team_wins.head(10),
-    x='Team',
-    y='Wins',
-    color='Team',
-    title='Top 10 Teams by Wins',
-    text='Wins'
+# Dropdown
+dropdown = widgets.Dropdown(
+    options=["Select...", "Top 5 Teams", "Top Batsmen", "Top Stadiums", "Top Bowlers"],
+    description="View:"
 )
-fig1.update_traces(textposition='outside')
-st.plotly_chart(fig1, use_container_width=True)
 
-# 📈 Matches per Season
-st.subheader("📈 Matches per Season")
-season_matches = matches['season'].value_counts().sort_index().reset_index()
-season_matches.columns = ['Season', 'Matches']
-fig2 = px.line(
-    season_matches,
-    x='Season',
-    y='Matches',
-    markers=True,
-    title='Matches per Season',
-)
-st.plotly_chart(fig2, use_container_width=True)
+output = widgets.Output()
 
-# 🏟️ Top Venues
-st.subheader("🏟️ Top Venues by Matches Hosted")
-venue_counts = matches['venue'].value_counts().head(10).reset_index()
-venue_counts.columns = ['Venue', 'Matches']
-fig3 = px.bar(
-    venue_counts,
-    x='Venue',
-    y='Matches',
-    color='Venue',
-    title='Top 10 Venues by Matches Hosted',
-    text='Matches'
-)
-fig3.update_traces(textposition='outside')
-st.plotly_chart(fig3, use_container_width=True)
+def show_graph(change):
+    output.clear_output()
+    with output:
+        choice = change['new']
 
-# 1️⃣ Top 5 Teams by Wins
-# ---------------------------
-st.subheader("🥇 Top 5 Teams by Wins")
-team_wins = matches['winner'].dropna().value_counts().reset_index().head(5)
-team_wins.columns = ['Team', 'Wins']
-fig1 = px.bar(team_wins, x='Team', y='Wins', color='Team', text='Wins',
-              title='Top 5 Teams by Wins')
-fig1.update_traces(textposition='outside')
-st.plotly_chart(fig1, use_container_width=True)
+        if choice == "Top 5 Teams":
+            data = matches['winner'].value_counts().head(5).reset_index()
+            data.columns = ['Team', 'Wins']
+            fig = px.bar(data, x='Team', y='Wins', title='Top 5 Teams by Wins')
+            fig.show()
 
+        elif choice == "Top Batsmen":
+            data = deliveries.groupby('batsman')['batsman_runs'].sum().nlargest(10).reset_index()
+            fig = px.bar(data, x='batsman_runs', y='batsman', orientation='h', title='Top 10 Batsmen')
+            fig.show()
 
+        elif choice == "Top Stadiums":
+            data = matches['venue'].value_counts().head(10).reset_index()
+            data.columns = ['Stadium', 'Matches']
+            fig = px.bar(data, x='Matches', y='Stadium', orientation='h', title='Top 10 Stadiums',color='Matches')
+            fig.show()
+
+        elif choice == "Top Bowlers":
+            wickets = deliveries[deliveries['player_dismissed'].notnull()]
+            data = wickets.groupby('bowler').size().nlargest(5).reset_index(name='Wickets')
+            fig = px.bar(data, x='Wickets', y='bowler', orientation='h', title='Top 5 Bowlers')
+            fig.show()
+
+dropdown.observe(show_graph, names='value')
+display(dropdown, output)
