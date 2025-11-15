@@ -51,17 +51,17 @@ if choice == "Top 5 Teams":
 
 elif choice == "Top Batsmen":
     data = deliveries.groupby('batsman')['batsman_runs'].sum().nlargest(10).reset_index()
-    fig = px.bar(data, x='batsman_runs', y='batsman', orientation='h', title='Top 10 Batsmen")
+    fig = px.bar(data, x='batsman_runs', y='batsman', orientation='h', title="Top 10 Batsmen")
     st.plotly_chart(fig)
 
 elif choice == "Top Stadiums":
     data = matches['venue'].value_counts().head(10).reset_index()
     data.columns = ['Stadium', 'Matches']
-    fig = px.bar(data, x='Matches', y='Stadium', orientation='h', title='Top 10 Stadiums")
+    fig = px.bar(data, x='Matches', y='Stadium', orientation='h', title="Top 10 Stadiums")
     st.plotly_chart(fig)
 
 elif choice == "Top Bowlers":
     wickets = deliveries[deliveries['player_dismissed'].notnull()]
     data = wickets.groupby('bowler').size().nlargest(5).reset_index(name='Wickets')
-    fig = px.bar(data, x='Wickets', y='bowler', orientation='h', title='Top 5 Bowlers")
+    fig = px.bar(data, x='Wickets', y='bowler', orientation='h', title="Top 5 Bowlers")
     st.plotly_chart(fig)
