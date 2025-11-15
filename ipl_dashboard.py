@@ -1,50 +1,57 @@
+import streamlit as st
 import pandas as pd
+import requests
+import io
 import plotly.express as px
-import ipywidgets as widgets
-from IPython.display import display
 
-# Load Data
-matches_url = "https://drive.google.com/file/d/1YUc6XB52LI5d0b4kdsj8Ax9TMet1X241/view?usp=drive_link"
-deliveries_url = "https://drive.google.com/file/d/1sPdWjzvWTTO4tv2ty9zpznMddGDklocs/view?usp=drive_link"
+st.title("🏏 IPL Analytics Dashboard")
 
-matches = pd.read_csv(matches_url)
-deliveries = pd.read_csv(deliveries_url)
+# Convert Google Drive links
+matches_url = "https://drive.google.com/uc?export=download&id=1YUc6XB52LI5d0b4kdsj8Ax9TMet1X241"
+deliveries_url = "https://drive.google.com/uc?export=download&id=1sPdWjzvWTTO4tv2ty9zpznMddGDklocs"
 
-# Dropdown
-dropdown = widgets.Dropdown(
-    options=["Select...", "Top 5 Teams", "Top Batsmen", "Top Stadiums", "Top Bowlers"],
-    description="View:"
+# Function to load CSV from Google Drive
+def load_csv(url):
+    try:
+        r = requests.get(url)
+        return pd.read_csv(io.BytesIO(r.content))
+    except Exception as e:
+        st.error(f"❌ Error loading data: {e}")
+        return None
+
+st.info("📥 Loading data from Google Drive...")
+matches = load_csv(matches_url)
+deliveries = load_csv(deliveries_url)
+
+if matches is None or deliveries is None:
+    st.stop()
+
+# Dropdown / Selectbox
+choice = st.selectbox(
+    "Select a visualization 👇",
+    ["Select...", "Top 5 Teams", "Top Batsmen", "Top Stadiums", "Top Bowlers"]
 )
 
-output = widgets.Output()
+# Display Graphs
+if choice == "Top 5 Teams":
+    data = matches['winner'].value_counts().head(5).reset_index()
+    data.columns = ['Team', 'Wins']
+    fig = px.bar(data, x='Team', y='Wins', title='Top 5 Teams by Wins')
+    st.plotly_chart(fig)
 
-def show_graph(change):
-    output.clear_output()
-    with output:
-        choice = change['new']
+elif choice == "Top Batsmen":
+    data = deliveries.groupby('batsman')['batsman_runs'].sum().nlargest(10).reset_index()
+    fig = px.bar(data, x='batsman_runs', y='batsman', orientation='h', title='Top 10 Batsmen')
+    st.plotly_chart(fig)
 
-        if choice == "Top 5 Teams":
-            data = matches['winner'].value_counts().head(5).reset_index()
-            data.columns = ['Team', 'Wins']
-            fig = px.bar(data, x='Team', y='Wins', title='Top 5 Teams by Wins')
-            fig.show()
+elif choice == "Top Stadiums":
+    data = matches['venue'].value_counts().head(10).reset_index()
+    data.columns = ['Stadium', 'Matches']
+    fig = px.bar(data, x='Matches', y='Stadium', orientation='h', title='Top 10 Stadiums')
+    st.plotly_chart(fig)
 
-        elif choice == "Top Batsmen":
-            data = deliveries.groupby('batsman')['batsman_runs'].sum().nlargest(10).reset_index()
-            fig = px.bar(data, x='batsman_runs', y='batsman', orientation='h', title='Top 10 Batsmen')
-            fig.show()
-
-        elif choice == "Top Stadiums":
-            data = matches['venue'].value_counts().head(10).reset_index()
-            data.columns = ['Stadium', 'Matches']
-            fig = px.bar(data, x='Matches', y='Stadium', orientation='h', title='Top 10 Stadiums',color='Matches')
-            fig.show()
-
-        elif choice == "Top Bowlers":
-            wickets = deliveries[deliveries['player_dismissed'].notnull()]
-            data = wickets.groupby('bowler').size().nlargest(5).reset_index(name='Wickets')
-            fig = px.bar(data, x='Wickets', y='bowler', orientation='h', title='Top 5 Bowlers')
-            fig.show()
-
-dropdown.observe(show_graph, names='value')
-display(dropdown, output)
+elif choice == "Top Bowlers":
+    wickets = deliveries[deliveries['player_dismissed'].notnull()]
+    data = wickets.groupby('bowler').size().nlargest(5).reset_index(name='Wickets')
+    fig = px.bar(data, x='Wickets', y='bowler', orientation='h', title='Top 5 Bowlers')
+    st.plotly_chart(fig)
