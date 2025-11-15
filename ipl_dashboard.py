@@ -48,17 +48,13 @@ if matches is None or deliveries is None:
 
 choice = st.selectbox(
     "Select a visualization 👇",
-    ["Select...", "Top 5 Teams", "Top Batsmen", "Top Stadiums", "Top Bowlers"]
+    ["Select...", "Top 5 Teams", "Top Stadiums", "Top Bowlers"]
 )
 
 if choice == "Top 5 Teams":
     data = matches['winner'].value_counts().head(5).reset_index()
     data.columns = ['Team', 'Wins']
     st.plotly_chart(px.bar(data, x='Team', y='Wins'))
-
-elif choice == "Top Batsmen":
-    data = deliveries.groupby('batsman')['batsman_runs'].sum().nlargest(10).reset_index()
-    st.plotly_chart(px.bar(data, x='batsman_runs', y='batsman', orientation='h'))
 
 elif choice == "Top Stadiums":
     data = matches['venue'].value_counts().head(10).reset_index()
