@@ -4,8 +4,8 @@ import ipywidgets as widgets
 from IPython.display import display
 
 # Load Data
-matches_url = "https://drive.google.com/uc?export=download&id=1ZCqwqbFRHdwHTCO4LWQezWB99LfynPJB"
-deliveries_url = "https://drive.google.com/uc?export=download&id=1kQXChtwZxkYrbzvVY5k4s-ffs6dVCVXK"
+matches_url = "https://drive.google.com/file/d/1YUc6XB52LI5d0b4kdsj8Ax9TMet1X241/view?usp=drive_link"
+deliveries_url = "https://drive.google.com/file/d/1sPdWjzvWTTO4tv2ty9zpznMddGDklocs/view?usp=drive_link"
 
 matches = pd.read_csv(matches_url)
 deliveries = pd.read_csv(deliveries_url)
